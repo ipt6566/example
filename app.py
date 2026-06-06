@@ -1,11 +1,83 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import requests
 from bs4 import BeautifulSoup
 import random
 
 app = Flask(__name__)
 
-NAMELIST = [
+
+def check_parking_api1(car_number):
+    target_url = "https://q90wu8atvd.execute-api.ap-northeast-2.amazonaws.com/parkofjustice/search"
+
+    payload = {
+        "number": car_number
+    }
+
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://q90wu8atvd.execute-api.ap-northeast-2.amazonaws.com/parkofjustice",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    try:
+        response = requests.post(target_url, data=payload, headers=headers)
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
+            result_tag = soup.select_one("p.fs-4.text-center")
+
+            if result_tag:
+                return result_tag.get_text(strip=True)
+            else:
+                return "데이터를 추출할 수 없습니다."
+
+        return f"상태 코드 오류 : {response.status_code}"
+
+    except Exception as e:
+        return f"네트워크 오류 : {e}"
+
+
+def check_parking_api2(car_number, owner_name):
+
+    url = "https://parking.ncuc.or.kr/api/reduction/irs.json"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://parking.ncuc.or.kr/reductionconfirm",
+        "Content-Type": "application/json;charset=UTF-8",
+        "Origin": "https://parking.ncuc.or.kr"
+    }
+
+    data = {
+        "carNo": car_number,
+        "carOwnerNm": owner_name,
+        "authNoF": "",
+        "authNoB": ""
+    }
+
+    try:
+        response = requests.post(url, json=data, headers=headers)
+
+        if response.status_code == 200:
+
+            result_data = response.json()
+
+            dc_list = result_data.get("value", {}).get("dcList", [])
+
+            is_eligible = any(item for item in dc_list if item)
+
+            if is_eligible:
+                return "장애인전용주차 가능 차량"
+            else:
+                return "장애인전용주차 불가 차량"
+
+        return f"상태 코드 오류 : {response.status_code}"
+
+    except Exception as e:
+        return f"오류 발생 : {e}"
+
+
+namelist = 
     "김나다", "이서린", "박하준", "최유나", "정도윤", "강채린", "조민서", "윤지후", "장하린", "임서윤",
     "한도현", "오지안", "신유진", "권서후", "황다온", "안지우", "송하윤", "류서진", "전도율", "홍지민",
     "김시온", "이하람", "박채원", "최서우", "정예린", "강다인", "조윤서", "윤하준", "장시우", "임채윤",
@@ -82,57 +154,29 @@ NAMELIST = [
     "한준혁", "오성윤", "신온유", "권진우", "황슬아", "안혜린", "송채민", "류성우", "전민규", "홍가빈",
     "김채온", "이성우", "박민찬", "최슬아", "정보민", "강유설", "조혜린", "윤채온", "장진우", "임온유"]
 
-@app.route('/')
+
+@app.route("/", methods=["GET", "POST"])
 def index():
-    return render_template('index.html')
 
-@app.route('/check', methods=['POST'])
-def check():
-    car_number = request.form.get('car_number')
-    owner_name = random.choice(NAMELIST)
-    
-    result1 = call_api1(car_number)
-    result2 = call_api2(car_number, owner_name)
-    
-    return jsonify({"api1": result1, "api2": result2, "used_name": owner_name})
+    result1 = None
+    result2 = None
 
-def call_api1(car_number):
-    target_url = "https://q90wu8atvd.execute-api.ap-northeast-2.amazonaws.com/parkofjustice/search"
-    payload = {"number": car_number}
-    try:
-        response = requests.post(target_url, data=payload)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        result_tag = soup.select_one('p.fs-4.text-center')
-        return result_tag.get_text(strip=True) if result_tag else "결과 없음"
-    except:
-        return "에러 발생"
+    if request.method == "POST":
 
-def call_api2(car_number, owner_name):
-    url = "https://parking.ncuc.or.kr/api/reduction/irs.json"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/125.0.0.0",
-        "Referer": "https://parking.ncuc.or.kr/reductionconfirm",
-        "Content-Type": "application/json;charset=UTF-8",
-        "Origin": "https://parking.ncuc.or.kr"
-    }
-    data = {
-        "carNo": car_number,
-        "carOwnerNm": owner_name,
-        "authNoF": "",
-        "authNoB": ""
-    }
+        car_number = request.form.get("car_number")
 
-    try:
-        response = requests.post(url, json=data, headers=headers)
-        if response.status_code == 200:
-            result_data = response.json()
-            dc_list = result_data.get("value", {}).get("dcList", [])
-            is_eligible = any(item for item in dc_list if item)
-            return "장애인전용주차 가능" if is_eligible else "장애인전용주차 불가"
-        else:
-            return f"API 호출 오류 (상태코드: {response.status_code})"
-    except Exception as e:
-        return f"에러 발생: {str(e)}"
+        owner_name = random.choice(namelist)
 
-if __name__ == '__main__':
+        result1 = check_parking_api1(car_number)
+        result2 = check_parking_api2(car_number, owner_name)
+
+    return render_template(
+        "index.html",
+        result1=result1,
+        result2=result2
+    )
+
+
+if __name__ == "__main__":
     app.run(debug=True)
+

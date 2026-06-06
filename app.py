@@ -158,24 +158,22 @@ namelist = [
 @app.route("/", methods=["GET", "POST"])
 def index():
 
+    car_number = request.form.get("car_number", "")
     result1 = None
     result2 = None
 
     if request.method == "POST":
-
-        car_number = request.form.get("car_number")
-
         owner_name = random.choice(namelist)
 
         result1 = check_parking_api1(car_number)
         result2 = check_parking_api2(car_number, owner_name)
 
     return render_template(
-    "index.html",
-    car_number=car_number,
-    result1=result1,
-    result2=result2
-)
+        "index.html",
+        car_number=car_number,
+        result1=result1,
+        result2=result2
+    )
 
 
 if __name__ == "__main__":

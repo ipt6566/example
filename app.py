@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 import random
@@ -7,6 +7,7 @@ app = Flask(__name__)
 
 
 def check_parking_api1(car_number):
+
     target_url = "https://q90wu8atvd.execute-api.ap-northeast-2.amazonaws.com/parkofjustice/search"
 
     payload = {
@@ -20,21 +21,33 @@ def check_parking_api1(car_number):
     }
 
     try:
-        response = requests.post(target_url, data=payload, headers=headers)
+
+        response = requests.post(
+            target_url,
+            data=payload,
+            headers=headers
+        )
 
         if response.status_code == 200:
-            soup = BeautifulSoup(response.text, "html.parser")
-            result_tag = soup.select_one("p.fs-4.text-center")
+
+            soup = BeautifulSoup(
+                response.text,
+                "html.parser"
+            )
+
+            result_tag = soup.select_one(
+                "p.fs-4.text-center"
+            )
 
             if result_tag:
                 return result_tag.get_text(strip=True)
-            else:
-                return "데이터를 추출할 수 없습니다."
 
-        return f"상태 코드 오류 : {response.status_code}"
+            return "결과를 추출할 수 없습니다."
+
+        return f"오류 : {response.status_code}"
 
     except Exception as e:
-        return f"네트워크 오류 : {e}"
+        return str(e)
 
 
 def check_parking_api2(car_number, owner_name):
@@ -56,25 +69,32 @@ def check_parking_api2(car_number, owner_name):
     }
 
     try:
-        response = requests.post(url, json=data, headers=headers)
+
+        response = requests.post(
+            url,
+            json=data,
+            headers=headers
+        )
 
         if response.status_code == 200:
 
             result_data = response.json()
 
-            dc_list = result_data.get("value", {}).get("dcList", [])
+            dc_list = (
+                result_data
+                .get("value", {})
+                .get("dcList", [])
+            )
 
-            is_eligible = any(item for item in dc_list if item)
-
-            if is_eligible:
+            if any(item for item in dc_list if item):
                 return "장애인전용주차 가능 차량"
-            else:
-                return "장애인전용주차 불가 차량"
 
-        return f"상태 코드 오류 : {response.status_code}"
+            return "장애인전용주차 불가 차량"
+
+        return f"오류 : {response.status_code}"
 
     except Exception as e:
-        return f"오류 발생 : {e}"
+        return str(e)
 
 
 namelist = [
@@ -158,8 +178,7 @@ namelist = [
 @app.route("/")
 def index():
     return render_template("index.html")
-    
-from flask import Flask, render_template, request, jsonify
+
 
 @app.route("/search", methods=["POST"])
 def search():
@@ -169,7 +188,11 @@ def search():
     owner_name = random.choice(namelist)
 
     result1 = check_parking_api1(car_number)
-    result2 = check_parking_api2(car_number, owner_name)
+
+    result2 = check_parking_api2(
+        car_number,
+        owner_name
+    )
 
     return jsonify({
         "car_number": car_number,
@@ -177,6 +200,6 @@ def search():
         "result2": result2
     })
 
+
 if __name__ == "__main__":
     app.run(debug=True)
-

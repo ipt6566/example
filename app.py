@@ -155,26 +155,27 @@ namelist = [
     "김채온", "이성우", "박민찬", "최슬아", "정보민", "강유설", "조혜린", "윤채온", "장진우", "임온유"]
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
+    return render_template("index.html")
+    
+from flask import Flask, render_template, request, jsonify
 
-    car_number = request.form.get("car_number", "")
-    result1 = None
-    result2 = None
+@app.route("/search", methods=["POST"])
+def search():
 
-    if request.method == "POST":
-        owner_name = random.choice(namelist)
+    car_number = request.json["car_number"]
 
-        result1 = check_parking_api1(car_number)
-        result2 = check_parking_api2(car_number, owner_name)
+    owner_name = random.choice(namelist)
 
-    return render_template(
-        "index.html",
-        car_number=car_number,
-        result1=result1,
-        result2=result2
-    )
+    result1 = check_parking_api1(car_number)
+    result2 = check_parking_api2(car_number, owner_name)
 
+    return jsonify({
+        "car_number": car_number,
+        "result1": result1,
+        "result2": result2
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)

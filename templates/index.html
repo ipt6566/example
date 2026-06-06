@@ -1,22 +1,73 @@
 <!DOCTYPE html>
-<html>
-<body>
-    <h2>장애인차량 조회 서비스</h2>
-    <input type="text" id="car_number" placeholder="차량번호 입력">
-    <button onclick="checkParking()">조회하기</button>
-    <div id="result"></div>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>장애인 차량 조회</title>
 
-    <script>
-        async function checkParking() {
-            const carNumber = document.getElementById('car_number').value;
-            const res = await fetch('/check', {
-                method: 'POST',
-                body: new URLSearchParams({car_number: carNumber})
-            });
-            const data = await res.json();
-            document.getElementById('result').innerText = 
-                `API 1: ${data.api1}\nAPI 2: ${data.api2}`;
+    <style>
+
+        body{
+            font-family: Arial;
+            max-width:700px;
+            margin:auto;
+            padding-top:50px;
         }
-    </script>
+
+        input{
+            width:300px;
+            padding:10px;
+            font-size:16px;
+        }
+
+        button{
+            padding:10px 20px;
+            font-size:16px;
+        }
+
+        .result{
+            margin-top:30px;
+            border:1px solid #ddd;
+            padding:20px;
+            background:#f5f5f5;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<h2>차량 조회</h2>
+
+<form method="POST">
+
+    <input
+        type="text"
+        name="car_number"
+        placeholder="차량번호 입력"
+        required>
+
+    <button type="submit">
+        조회
+    </button>
+
+</form>
+
+
+{% if result1 %}
+
+<div class="result">
+
+    <h3>검증 1</h3>
+    <p>{{ result1 }}</p>
+
+    <hr>
+
+    <h3>검증 2</h3>
+    <p>{{ result2 }}</p>
+
+</div>
+
+{% endif %}
+
 </body>
 </html>

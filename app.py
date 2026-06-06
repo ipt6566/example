@@ -171,10 +171,11 @@ def index():
         result2 = check_parking_api2(car_number, owner_name)
 
     return render_template(
-        "index.html",
-        result1=result1,
-        result2=result2
-    )
+    "index.html",
+    car_number=car_number,
+    result1=result1,
+    result2=result2
+)
 
 
 if __name__ == "__main__":

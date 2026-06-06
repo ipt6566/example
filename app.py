@@ -128,8 +128,11 @@ def call_api2(car_number, owner_name):
             result_data = response.json()
             dc_list = result_data.get("value", {}).get("dcList", [])
             is_eligible = any(item for item in dc_list if item)
-
-    return "장애인전용주차 가능" if is_eligible else "장애인전용주차 불가"
+            return "장애인전용주차 가능" if is_eligible else "장애인전용주차 불가"
+        else:
+            return f"API 호출 오류 (상태코드: {response.status_code})"
+    except Exception as e:
+        return f"에러 발생: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True)
